@@ -1,0 +1,29 @@
+{
+  "name": "happygallery",
+  "description": "Lightweight lightbox for javascript to make developers happy :)",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "format": "prettier index.js --write"
+  },
+  "keywords": [
+    "gallery",
+    "lightbox",
+    "slider",
+    "animation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KraussKommunikation/happygallery.git"
+  },
+  "author": "Krauss Kommunikation GmbH",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/KraussKommunikation/happygallery/issues"
+  },
+  "homepage": "https://github.com/KraussKommunikation/happygallery#readme",
+  "dependencies": {
+    "prettier": "^2.7.1"
+  }
+}
