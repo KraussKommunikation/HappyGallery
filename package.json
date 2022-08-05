@@ -23,7 +23,7 @@
     "url": "https://github.com/KraussKommunikation/happygallery/issues"
   },
   "homepage": "https://github.com/KraussKommunikation/happygallery#readme",
-  "dependencies": {
+  "devDependencies": {
     "prettier": "^2.7.1"
   }
 }
