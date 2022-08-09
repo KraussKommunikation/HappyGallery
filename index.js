@@ -1,6 +1,6 @@
 /**
  * HappyGallery v1.1.0
- * Licensed under MIT
+ * Licensed under GPL-3.0
  *
  * https://github.com/KraussKommunikation/happygallery
  *
