@@ -1,3 +1,11 @@
+/**
+ * HappyGallery v1.1.0
+ * Licensed under MIT
+ *
+ * https://github.com/KraussKommunikation/happygallery
+ *
+ * by Krauss Kommunikation (krausskommunikation.de)
+ */
 class HappyGallery {
   constructor(container, options = {}) {
     const optionBluePrint = {
