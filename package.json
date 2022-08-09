@@ -1,7 +1,7 @@
 {
   "name": "happygallery",
   "description": "Lightweight lightbox for javascript to make developers happy :)",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.js",
   "type": "module",
   "scripts": {
