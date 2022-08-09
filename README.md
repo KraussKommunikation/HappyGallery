@@ -24,18 +24,18 @@ Create the HTML structure:
 
 ```html
 <div id="my-happygallery">
-	<a href="https://picsum.photos/seed/test1/600/400">
-		<img title="Test Image 1" alt="image 1 text" src="https://picsum.photos/seed/test1/600/400" />
-	</a>
-	<a href="https://picsum.photos/seed/test2/600/400">
-		<img title="Test Image 2" alt="image 2 text" src="https://picsum.photos/seed/test2/600/400" />
-	</a>
-	<a href="https://picsum.photos/seed/test3/600/400">
-		<img title="Test Image 3" alt="image 3 text" src="https://picsum.photos/seed/test3/600/400" />
-	</a>
-	<a href="https://picsum.photos/seed/test4/600/400">
-		<img title="Test Image 4" alt="image 4 text" src="https://picsum.photos/seed/test4/600/400" />
-	</a>
+  <a href="https://picsum.photos/seed/test1/600/400">
+    <img title="Test Image 1" alt="image 1 text" src="https://picsum.photos/seed/test1/600/400" />
+  </a>
+  <a href="https://picsum.photos/seed/test2/600/400">
+    <img title="Test Image 2" alt="image 2 text" src="https://picsum.photos/seed/test2/600/400" />
+  </a>
+  <a href="https://picsum.photos/seed/test3/600/400">
+    <img title="Test Image 3" alt="image 3 text" src="https://picsum.photos/seed/test3/600/400" />
+  </a>
+  <a href="https://picsum.photos/seed/test4/600/400">
+    <img title="Test Image 4" alt="image 4 text" src="https://picsum.photos/seed/test4/600/400" />
+  </a>
 </div>
 ```
 
@@ -51,7 +51,7 @@ For more customization, also pass an options object:
 ```js
 const myGallery = document.querySelector("#my-happygallery");
 const myHappyGallery = new HappyGallery(myGallery, {
-	itemSelector: "a",
+  itemSelector: "a",
 });
 ```
 
@@ -64,7 +64,7 @@ const myHappyGallery = new HappyGallery(myGallery, {
 |itemSelector|selector|"a"|Selector for where to find images. Targeted elements should be an image or contain one|
 |slideAnimationDuration|float|0.3|CSS transition duration in seconds|
 |toolbar|string[]|["download", "share"]|Array with toolbar buttons that should be visible|
-|useNativeShareAIP|boolean|true|*requires toolbar[].sharebutton* Should the share-button use the browsers native share API (if available)|
+|useNativeShareAPI|boolean|true|*requires toolbar[].sharebutton* Should the share-button use the browsers native share API (if available)|
 
 ## Contribute
 
@@ -79,4 +79,9 @@ If you have any questions, feel free to [ask in discussions](https://github.com/
 
 ## Contributors
 
-Project created and maintained by @lkrauss04, @EinLinuus, made possible by [Krauss Kommunikation GmbH](https://krausskommunikation.de/),
+Project created and maintained by
+
+- [@lkrauss04](https://github.com/lkrauss04),
+- [@EinLinuus](https://github.com/EinLinuus),
+
+made possible by [Krauss Kommunikation GmbH](https://krausskommunikation.de/).
