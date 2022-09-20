@@ -6,6 +6,167 @@
  *
  * by Krauss Kommunikation (krausskommunikation.de)
  */
+
+/* HappyGallerySlider */
+class HappyGallerySlider {
+  constructor(element) {
+    this.container = element;
+    this.track = this.container.querySelector("[data-hg-images]");
+
+    this.slides = [];
+    this.slideWidth = 0;
+    this.currentSlide = 0;
+    this.grabbing = false;
+    this.moveXstart = 0;
+
+    this.resize();
+    window.addEventListener("orientationchange", (_) => {
+      this.resize();
+    });
+    window.addEventListener("resize", (_) => {
+      this.resize();
+    });
+
+    this.container.addEventListener("mousedown", (event) => {
+      this.onDragStart(event);
+    });
+    this.container.addEventListener("mouseup", (event) => {
+      this.onDragStop(event);
+    });
+    this.container.addEventListener("mousemove", (event) => {
+      this.onDragMove(event);
+    });
+    this.container.addEventListener("mouseout", (event) => {
+      if (event.target !== event.currentTarget) return;
+      this.onDragStop(event);
+    });
+    this.container.addEventListener("touchstart", (event) => {
+      event.preventDefault();
+      this.onDragStart(event);
+    });
+    this.container.addEventListener("touchmove", (event) => {
+      this.onDragMove(event);
+    });
+    this.container.addEventListener("touchend", (event) => {
+      this.onDragStop(event);
+    });
+  }
+
+  onDragStart(event) {
+    this.currentDrag = 0;
+    this.grabbing = true;
+    this.moveXstart = event.touches ? event.touches[0].pageX : event.pageX;
+    this.container.classList.add("slider-dragging");
+    this.lastDragPosition = this.moveXstart;
+    const whileDragging = () => {
+      if (!this.grabbing) return;
+      const moveX = -(this.currentSlide * this.slideWidth) - this.currentDrag;
+      this.container.setAttribute("style", `--x: ${moveX}px`);
+      window.requestAnimationFrame(whileDragging);
+    };
+    window.requestAnimationFrame(whileDragging);
+  }
+
+  onDragMove(event) {
+    if (!this.grabbing) return;
+
+    const currentPosition =
+      (event.touches ? event.touches[0]?.pageX : event?.pageX) ?? this.lastDragPosition;
+    const { movement, percentage } = this.calculateScrollData(currentPosition);
+
+    this.currentDrag = movement;
+    this.lastDragPosition = currentPosition;
+  }
+
+  onDragStop(event) {
+    this.grabbing = false;
+    this.container.classList.remove("slider-dragging");
+
+    const currentPosition =
+      (event.touches ? event.touches[0]?.pageX : event?.pageX) ?? this.lastDragPosition;
+    const { movement, percentage } = this.calculateScrollData(currentPosition);
+
+    if (percentage >= 1) {
+      this.slideTo(this.currentSlide + 1);
+    } else if (percentage <= -1) {
+      this.slideTo(this.currentSlide - 1);
+    } else {
+      this.slideTo(this.currentSlide);
+    }
+
+    this.currentDrag = 0;
+
+    if (Math.abs(movement) < 56) {
+      if (this.onclick) this.onclick(event);
+    }
+  }
+
+  calculateScrollData(currentPosition) {
+    const isFirstSlide = this.currentSlide === 0;
+    const isLastSlide = this.currentSlide === this.slides.length - 1;
+
+    const start = this.moveXstart;
+    const end = currentPosition;
+    let distance = start - end;
+
+    let multiplier = 1;
+    let effectiveness = 1;
+    if (distance < 0) {
+      multiplier = -1;
+      distance *= -1;
+      if (isFirstSlide) effectiveness = 0.3;
+    } else {
+      if (isLastSlide) effectiveness = 0.3;
+    }
+
+    const requiredDistance = this.slideWidth * 0.5;
+    const percentage = distance / requiredDistance;
+    const movement =
+      this.easeCalculation(percentage) * multiplier * effectiveness * this.slideWidth;
+
+    return {
+      percentage: percentage * multiplier,
+      movement,
+    };
+  }
+
+  easeCalculation(t) {
+    return t;
+    // return -t*(t-2);
+  }
+
+  resize() {
+    const containerWidth = this.container.clientWidth;
+    this.slideWidth = containerWidth;
+    this.slides = this.track.querySelectorAll(".hg-image-element");
+    const totalWidth = this.slides.length * containerWidth;
+
+    this.track.style.width = totalWidth + "px";
+    for (const slide of this.slides) {
+      slide.style.width = containerWidth + "px";
+    }
+
+    const moveX = -(this.currentSlide * this.slideWidth);
+    this.container.setAttribute("style", `--x: ${moveX}px`);
+  }
+
+  slideTo(slideIndex) {
+    if (slideIndex < 0) slideIndex = 0;
+    if (slideIndex > this.slides.length - 1) slideIndex = this.slides.length - 1;
+
+    const isNew = this.currentSlide !== slideIndex;
+    this.currentSlide = slideIndex;
+
+    const moveX = -(this.currentSlide * this.slideWidth);
+    this.container.setAttribute("style", `--x: ${moveX}px`);
+
+    if (isNew) {
+      if (this.onslide) this.onslide(this.currentSlide);
+    }
+  }
+}
+
+/* HappyGallery */
 class HappyGallery {
   constructor(container, options = {}) {
     const optionBluePrint = {
@@ -23,6 +184,41 @@ class HappyGallery {
     this.container = container;
     this.ui = null;
     this.unregisterEventListeners = this.registerEventListeners();
+
+    this.itemHandler = [
+      function (element) {
+        if (element.tagName.toLowerCase() !== "img") return false;
+        const src = element.getAttribute("src") ?? "";
+        const title = element.getAttribute("title") ?? "";
+        const alt = element.getAttribute("alt") ?? "";
+        return `<div class="hg-image-element is-image">
+                <img src="${src}" title="${title}" alt="${alt}" />
+            </div>`;
+      },
+      function (element) {
+        if (element.tagName.toLowerCase() !== "a") return false;
+        let title = "";
+        let alt = "";
+        const src = element.getAttribute("href");
+        const image = element.querySelector("img");
+        if (image) {
+          title = image.getAttribute("title") ?? "";
+          alt = image.getAttribute("alt") ?? "";
+        }
+        return `<div class="hg-image-element is-image">
+                <img src="${src}" title="${title}" alt="${alt}" />
+            </div>`;
+      },
+    ];
+    this.titleHandler = [
+      function (element) {
+        if (!element.classList.contains("is-image")) return false;
+        const image = element.querySelector("img");
+        if (!image) return false;
+        const title = image.getAttribute("title") ?? "";
+        return title;
+      },
+    ];
 
     this.createStyleTag();
 
@@ -131,92 +327,23 @@ class HappyGallery {
     });
 
     document.body.classList.add("hg-overflow-hidden");
-
-    // Slider
-    let isDown = false;
-    let moveX = 0;
-    let startX = 0;
-
-    const slider = this.ui.querySelector("[data-hg-images]");
-    const sliderParent = this.ui.querySelector("[data-hg-imagecontainer]");
-
-    const dragStart = (e) => {
-      if (e.type === "touchstart") {
-        startX = e.changedTouches[0].pageX - slider.offsetLeft;
-      } else {
-        startX = e.pageX - slider.offsetLeft;
-      }
-      isDown = true;
-      slider.classList.add("hg-grabbing");
-      sliderParent.setAttribute("style", `--drag: 0%;`);
-    };
-    const dragStop = () => {
-      isDown = false;
-      slider.classList.remove("hg-grabbing");
-      onLetGo();
-      moveX = 0;
-      sliderParent.setAttribute("style", `--drag: 0%;`);
-    };
-    const onLetGo = () => {
-      const fullWidth = sliderParent.clientWidth;
-      const currentSlideStart = this.getCurrentActiveIndex() * fullWidth;
-      const currentPos = currentSlideStart - moveX;
-      const rest = currentPos % fullWidth;
-      const currentProgress = rest / fullWidth;
-      const slideChange = Math.round(currentProgress);
-      const slidesBefore = Math.floor(currentPos / fullWidth);
-      const newIndex = slideChange + slidesBefore;
-      this.goToSlide(newIndex);
-    };
-
-    slider.addEventListener("mousedown", dragStart);
-    slider.addEventListener("mouseleave", dragStop);
-    slider.addEventListener("mouseup", dragStop);
-    slider.addEventListener("mousemove", (e) => {
-      if (!isDown) return;
-      e.preventDefault();
-      const x = e.pageX - slider.offsetLeft;
-      const walk = (x - startX) * 2;
-      moveX = walk;
-      const percentage = Math.round((moveX / slider.clientWidth) * 100);
-      sliderParent.setAttribute("style", `--drag: ${percentage}%;`);
-    });
-
-    slider.addEventListener("touchstart", dragStart);
-    slider.addEventListener("touchleave", dragStop);
-    slider.addEventListener("touchend", dragStop);
-    slider.addEventListener("touchmove", (e) => {
-      if (!isDown) return;
-      e.preventDefault();
-      const x = e.changedTouches[0].pageX - slider.offsetLeft;
-      const walk = (x - startX) * 2;
-      moveX = walk;
-      const percentage = Math.round((moveX / slider.clientWidth) * 100);
-      sliderParent.setAttribute("style", `--drag: ${percentage}%;`);
-    });
-
     document.body.appendChild(this.ui);
 
-    const imgArray = [];
+    const htmlArray = [];
     this.container.querySelectorAll(this.options.itemSelector).forEach((el) => {
-      if (el.tagName.toLowerCase() === "img") {
-        imgArray.push(el);
-      } else {
-        const img = el.querySelector("img");
-        if (img) imgArray.push(img);
+      for (const handler of this.itemHandler) {
+        const result = handler(el);
+        if (result === false) continue;
+        htmlArray.push(result);
+        break;
       }
     });
-    for (let i = 0; i < imgArray.length; i++) {
-      const img = imgArray[i];
-      const src = img.getAttribute("src") ?? "";
-      const title = img.getAttribute("title") ?? "";
-      const alt = img.getAttribute("alt") ?? "";
-      this.ui.querySelector("[data-hg-images]").innerHTML += `<div class="hg-image-element" >
-        <img src="${src}" title="${title}" alt="${alt}" />
-        </div>`;
-    }
+    this.ui.querySelector("[data-hg-images]").innerHTML += htmlArray.join("");
 
-    if (imgArray.length < 2) {
+    // Slider
+    this.slider = new HappyGallerySlider(this.ui.querySelector("[data-hg-imagecontainer]"));
+
+    if (htmlArray.length < 2) {
       this.ui.querySelector("button[data-hg-btn-prev]").classList.add("hg-hidden");
       this.ui.querySelector("button[data-hg-btn-next]").classList.add("hg-hidden");
       this.ui.querySelector("[data-hg-pageinfo]").classList.add("hg-hidden");
@@ -225,99 +352,46 @@ class HappyGallery {
       if (!this.options.toolbar.includes(el.getAttribute("data-hg-toolbar"))) el.remove();
     });
 
-    this.goToSlide(index, false);
+    this.slider.slideTo(index);
 
-    this.ui.addEventListener("click", (e) => {
-      if (
-        e.target.matches("svg") ||
-        e.target.matches("button") ||
-        e.target.matches("path") ||
-        e.target.matches(".lg-footer span")
-      )
-        return;
+    this.slider.onclick = (event) => {
+      // const { pageX, pageY } = event;
+      // const activeSlide = this.slider.slides[this.slider.currentSlide];
+      // const image = activeSlide.querySelector("img");
+      // const { top, right, bottom, left } = image.getBoundingClientRect();
+      // this.closeGallery();
+    };
 
-      const imgOffsetLeft = document
-        .querySelector(".hg-element-active img")
-        .getBoundingClientRect().left;
-      const imgOffsetRight = document
-        .querySelector(".hg-element-active img")
-        .getBoundingClientRect().right;
-      const imgOffsetTop = document
-        .querySelector(".hg-element-active img")
-        .getBoundingClientRect().top;
-      const imgOffsetBottom = document
-        .querySelector(" .hg-element-active img")
-        .getBoundingClientRect().bottom;
-      if (imgOffsetLeft < 0 || imgOffsetRight > window.innerWidth) {
-        return;
+    const onSlideChange = (index) => {
+      let newTitle = "";
+
+      const slide = this.slider.slides[this.slider.currentSlide];
+      for (const handler of this.titleHandler) {
+        const result = handler(slide);
+        if (result === false) continue;
+        newTitle = result;
+        break;
       }
-      if (
-        e.x > imgOffsetRight ||
-        e.x < imgOffsetLeft ||
-        e.y > imgOffsetBottom ||
-        e.y < imgOffsetTop
-      ) {
-        this.closeGallery();
-      }
-    });
+
+      this.ui.querySelector("[data-hg-pageinfo]").innerHTML = `${index + 1} / ${
+        this.slider.slides.length
+      }`;
+      this.ui.querySelector("[data-hg-title] span").innerHTML = newTitle;
+    };
+    onSlideChange(this.slider.currentSlide);
+    this.slider.onslide = onSlideChange;
   }
   getCurrentActiveIndex() {
-    if (!this.ui) return;
-    const index = [...this.ui.querySelectorAll("[data-hg-images] > *")].findIndex((e) =>
-      e.classList.contains("hg-element-active"),
-    );
-    return index;
+    return this.slider.currentSlide;
   }
 
   nextSlide() {
     if (!this.ui) return;
-    const amount = this.ui.querySelectorAll("[data-hg-images] > *").length;
-    let currentIndex = this.getCurrentActiveIndex();
-    currentIndex++;
-    if (currentIndex === amount) {
-      currentIndex = 0;
-    }
-    this.goToSlide(currentIndex);
+    this.slider.slideTo(this.getCurrentActiveIndex() + 1);
   }
   prevSlide() {
     if (!this.ui) return;
-    const amount = this.ui.querySelectorAll("[data-hg-images] > *").length;
-    let currentIndex = this.getCurrentActiveIndex();
-    currentIndex--;
-    if (currentIndex < 0) {
-      currentIndex = amount - 1;
-    }
-    this.goToSlide(currentIndex);
-  }
-
-  goToSlide(index, animate = true) {
-    if (!this.ui) return;
-    const amount = this.ui.querySelectorAll("[data-hg-images] > *").length;
-    if (index < 0) index = 0;
-    if (index + 1 >= amount) index = amount - 1;
-    const cssValues = `--childs: ${amount};--active: ${index}; --slide-animation: ${
-      animate ? this.options.slideAnimationDuration : 0
-    }s`;
-    this.ui.querySelector("[data-hg-images").setAttribute("style", cssValues);
-    this.ui.querySelectorAll("[data-hg-images] > *").forEach((element, elementIndex) => {
-      if (elementIndex === index) {
-        element.classList.add("hg-element-active");
-      } else {
-        element.classList.remove("hg-element-active");
-      }
-    });
-    this.ui.querySelector("[data-hg-pageinfo]").innerHTML = `${index + 1} / ${amount}`;
-    const currentImage = this.ui.querySelector("[data-hg-images] > .hg-element-active img");
-    const title = currentImage.getAttribute("title") || currentImage.getAttribute("alt") || "";
-    this.ui.querySelector("[data-hg-title] span").innerHTML = title;
-
-    const imgUrl = this.ui.querySelector(".hg-element-active img").getAttribute("src");
-    this.ui.querySelector('[data-hg-toolbar="download"]').setAttribute("href", imgUrl);
-    this.ui.querySelector('[data-hg-toolbar="download"]').setAttribute("download", "");
-
-    this.ui.querySelector('[data-hg-toolbar="share"]').addEventListener("click", () => {
-      const element = document.createElement("div");
-    });
+    this.slider.slideTo(this.getCurrentActiveIndex() - 1);
   }
 
   closeGallery() {
@@ -504,22 +578,20 @@ class HappyGallery {
   
       #happygallery-ui .hg-body {
         overflow: hidden;
-        --drag: 0%;
+        cursor: grab;
+        --x: 0;
+      }
+      #happygallery-ui .hg-body.slider-grabbing {
+        cursor: grabbing;
       }
   
       #happygallery-ui .hg-body .hg-body-images {
-        height: 100%;
-        width: calc(var(--childs) * 100%);
-        display: flex;
-        transition: transform var(--slide-animation, 0) ease;
-        transform: translateX(calc((100% / var(--childs, 0)) * var(--active, 0) * -1 + var(--drag)));
+        transform: translate3d(var(--x, 0), 0px, 0px);
+        transition: transform .2s ease;
+        user-select: none;
       }
   
-      #happygallery-ui .hg-body-images.hg-grabbing {
-        cursor: grabbing !important;
-      }
-  
-      #happygallery-ui .hg-body .hg-body-images * {
+      #happygallery-ui .hg-body .hg-body-images .hg-image-element.is-image {
         pointer-events: none;
         user-select: none;
       }
@@ -531,15 +603,13 @@ class HappyGallery {
         display: flex;
         justify-content: center;
         align-items: center;
-        
+        float: left;
       }
   
       #happygallery-ui .hg-body .hg-body-images .hg-image-element img {
         position: absolute;
         height: 100%;
-        max-height: fit-content;
         width: calc(100% - 4rem);
-        max-width: fit-content;
         object-position: center;
         object-fit: contain;
         margin: auto 0;
