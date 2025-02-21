@@ -27,8 +27,6 @@ class HappyGallery {
     this.ui = null;
     this.unregisterEventListeners = this.registerEventListeners();
 
-    console.log(this.options.renderers);
-
     this.createStyleTag();
 
     if (this.options.observe) {
@@ -113,7 +111,7 @@ class HappyGallery {
             url: document.location.href,
           })
           .then(() => {
-            console.log("Callback after sharing");
+            //
           })
           .catch(console.error);
       } else {
