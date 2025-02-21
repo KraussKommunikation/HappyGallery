@@ -1,5 +1,5 @@
 /**
- * HappyGallery v1.1.0
+ * HappyGallery v1.2.0
  * Licensed under GPL-3.0
  *
  * https://github.com/KraussKommunikation/happygallery
@@ -7,6 +7,8 @@
  * by Krauss Kommunikation (krausskommunikation.de)
  */
 class HappyGallery {
+  static renderers = [];
+
   constructor(container, options = {}) {
     const optionBluePrint = {
       observe: false,
@@ -15,6 +17,7 @@ class HappyGallery {
       slideAnimationDuration: 0.3,
       toolbar: ["download", "share"],
       useNativeShareAPI: true,
+      renderers: [...HappyGallery.renderers],
     };
     this.options = {
       ...optionBluePrint,
@@ -23,6 +26,8 @@ class HappyGallery {
     this.container = container;
     this.ui = null;
     this.unregisterEventListeners = this.registerEventListeners();
+
+    console.log(this.options.renderers);
 
     this.createStyleTag();
 
@@ -38,6 +43,10 @@ class HappyGallery {
       });
       this.mutationObserver.observe(this.container, { subtree: true, childList: true });
     }
+  }
+
+  static registerRenderer(renderer) {
+    HappyGallery.renderers.push(renderer);
   }
 
   registerEventListeners() {
@@ -197,26 +206,21 @@ class HappyGallery {
 
     document.body.appendChild(this.ui);
 
-    const imgArray = [];
+    let itemCount = 0;
     this.container.querySelectorAll(this.options.itemSelector).forEach((el) => {
-      if (el.tagName.toLowerCase() === "img") {
-        imgArray.push(el);
-      } else {
-        const img = el.querySelector("img");
-        if (img) imgArray.push(img);
+      for (const potentialRenderer of this.options.renderers) {
+        const renderer = new potentialRenderer();
+        const element = renderer.detector(el, this);
+        if (element) {
+          const output = renderer.render(element, this);
+          this.ui.querySelector("[data-hg-images]").appendChild(output);
+          itemCount++;
+          break;
+        }
       }
     });
-    for (let i = 0; i < imgArray.length; i++) {
-      const img = imgArray[i];
-      const src = img.getAttribute("src") ?? "";
-      const title = img.getAttribute("title") ?? "";
-      const alt = img.getAttribute("alt") ?? "";
-      this.ui.querySelector("[data-hg-images]").innerHTML += `<div class="hg-image-element" >
-        <img src="${src}" title="${title}" alt="${alt}" />
-        </div>`;
-    }
 
-    if (imgArray.length < 2) {
+    if (itemCount < 2) {
       this.ui.querySelector("button[data-hg-btn-prev]").classList.add("hg-hidden");
       this.ui.querySelector("button[data-hg-btn-next]").classList.add("hg-hidden");
       this.ui.querySelector("[data-hg-pageinfo]").classList.add("hg-hidden");
@@ -298,7 +302,7 @@ class HappyGallery {
     const cssValues = `--childs: ${amount};--active: ${index}; --slide-animation: ${
       animate ? this.options.slideAnimationDuration : 0
     }s`;
-    this.ui.querySelector("[data-hg-images").setAttribute("style", cssValues);
+    this.ui.querySelector("[data-hg-images]").setAttribute("style", cssValues);
     this.ui.querySelectorAll("[data-hg-images] > *").forEach((element, elementIndex) => {
       if (elementIndex === index) {
         element.classList.add("hg-element-active");
@@ -307,13 +311,18 @@ class HappyGallery {
       }
     });
     this.ui.querySelector("[data-hg-pageinfo]").innerHTML = `${index + 1} / ${amount}`;
-    const currentImage = this.ui.querySelector("[data-hg-images] > .hg-element-active img");
-    const title = currentImage.getAttribute("title") || currentImage.getAttribute("alt") || "";
-    this.ui.querySelector("[data-hg-title] span").innerHTML = title;
+    const currentElement = this.ui.querySelector("[data-hg-images] > .hg-element-active");
+    this.ui.querySelector("[data-hg-title] span").innerHTML =
+      currentElement.getAttribute("data-hg-title");
 
-    const imgUrl = this.ui.querySelector(".hg-element-active img").getAttribute("src");
-    this.ui.querySelector('[data-hg-toolbar="download"]').setAttribute("href", imgUrl);
-    this.ui.querySelector('[data-hg-toolbar="download"]').setAttribute("download", "");
+    const downloadUrl = currentElement.getAttribute("data-hg-download-url");
+    const downloadButton = this.ui.querySelector('[data-hg-toolbar="download"]');
+    if (downloadUrl) {
+      downloadButton.hidden = false;
+      downloadButton.setAttribute("download", "");
+    } else {
+      downloadButton.hidden = true;
+    }
 
     this.ui.querySelector('[data-hg-toolbar="share"]').addEventListener("click", () => {
       const element = document.createElement("div");
@@ -602,6 +611,105 @@ class HappyGallery {
   }
 }
 
+class HappyGallery_ImageRenderer {
+  detector(element) {
+    if (element.tagName.toLowerCase() === "img") {
+      return element;
+    }
+
+    const img = element.querySelector("img");
+    if (img) {
+      return img;
+    }
+
+    return null;
+  }
+
+  render(element) {
+    const src = element.getAttribute("src") ?? "";
+    const title = element.getAttribute("title") ?? "";
+    const alt = element.getAttribute("alt") ?? "";
+
+    const preview = document.createElement("div");
+    preview.classList.add("hg-image-element");
+    preview.innerHTML = `<img src="${src}" title="${title}" alt="${alt}" />`;
+
+    preview.setAttribute("data-hg-title", title ? title : alt);
+    preview.setAttribute("data-hg-download-url", src);
+
+    return preview;
+  }
+}
+
+class HappyGallery_VideoRenderer {
+  detector(element) {
+    if (element.tagName.toLowerCase() === "video") {
+      return element;
+    }
+
+    const video = element.querySelector("video");
+    if (video) {
+      return video;
+    }
+
+    return null;
+  }
+
+  render(element, gallery) {
+    const video = element.cloneNode(true);
+
+    const preview = document.createElement("div");
+    preview.classList.add("hg-image-element");
+
+    preview.setAttribute(
+      "data-hg-title",
+      video.getAttribute("title") ?? video.getAttribute("alt") ?? "",
+    );
+
+    video.classList = [];
+
+    const uiHeight = gallery.ui.clientHeight - 150;
+    const uiWidth = gallery.ui.clientWidth - 150;
+
+    video.addEventListener(
+      "loadedmetadata",
+      (e) => {
+        const videoHeight = video.videoHeight;
+        const videoWidth = video.videoWidth;
+
+        const size = this.getFittedVideoSize(uiWidth, uiHeight, videoWidth, videoHeight);
+        video.style.height = size.height + "px";
+        video.style.width = size.width + "px";
+      },
+      false,
+    );
+
+    preview.appendChild(video);
+
+    return preview;
+  }
+
+  getFittedVideoSize(uiWidth, uiHeight, videoWidth, videoHeight) {
+    const uiAspect = uiWidth / uiHeight;
+    const videoAspect = videoWidth / videoHeight;
+
+    if (videoAspect > uiAspect) {
+      return {
+        width: uiWidth,
+        height: uiWidth / videoAspect,
+      };
+    } else {
+      return {
+        width: uiHeight * videoAspect,
+        height: uiHeight,
+      };
+    }
+  }
+}
+
+HappyGallery.registerRenderer(HappyGallery_ImageRenderer);
+HappyGallery.registerRenderer(HappyGallery_VideoRenderer);
+
 if (!("path" in Event.prototype))
   Object.defineProperty(Event.prototype, "path", {
     get: function () {
@@ -617,4 +725,8 @@ if (!("path" in Event.prototype))
     },
   });
 
-export default HappyGallery;
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = HappyGallery;
+} else {
+  window.HappyGallery = HappyGallery;
+}

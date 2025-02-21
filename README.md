@@ -10,7 +10,11 @@ Install the latest version using npm:
 npm install happygallery
 ```
 
-More installation methods will be added in the future.
+Or manually download and include the `index.js` file. You can also safely rename it `happygallery.js` for more clarity and include it like this:
+
+```html
+<script src="/path/to/happygallery.js"></script>
+```
 
 ## Usage
 
