@@ -1,5 +1,5 @@
 /**
- * HappyGallery v1.2.0
+ * HappyGallery v1.2.1
  * Licensed under GPL-3.0
  *
  * https://github.com/KraussKommunikation/happygallery
@@ -311,7 +311,7 @@ class HappyGallery {
     this.ui.querySelector("[data-hg-pageinfo]").innerHTML = `${index + 1} / ${amount}`;
     const currentElement = this.ui.querySelector("[data-hg-images] > .hg-element-active");
     this.ui.querySelector("[data-hg-title] span").innerHTML =
-      currentElement.getAttribute("data-hg-title");
+      currentElement.getAttribute("data-hg-title") ?? "";
 
     const downloadUrl = currentElement.getAttribute("data-hg-download-url");
     const downloadButton = this.ui.querySelector('[data-hg-toolbar="download"]');
@@ -632,7 +632,7 @@ class HappyGallery_ImageRenderer {
     preview.classList.add("hg-image-element");
     preview.innerHTML = `<img src="${src}" title="${title}" alt="${alt}" />`;
 
-    preview.setAttribute("data-hg-title", title ? title : alt);
+    preview.setAttribute("data-hg-title", title ? title : '');
     preview.setAttribute("data-hg-download-url", src);
 
     return preview;
@@ -661,7 +661,7 @@ class HappyGallery_VideoRenderer {
 
     preview.setAttribute(
       "data-hg-title",
-      video.getAttribute("title") ?? video.getAttribute("alt") ?? "",
+      video.getAttribute("title") ?? "",
     );
 
     video.classList = [];
