@@ -639,6 +639,9 @@ class HappyGallery_ImageRenderer {
   }
 
   getTitleFallback(element) {
+    if(element.hasAttribute('data-hg-title')) {
+      return element.getAttribute("data-hg-title");
+    }
     return element.closest("[data-hg-title]")?.getAttribute("data-hg-title") ?? "";
   }
 }
