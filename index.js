@@ -1,5 +1,5 @@
 /**
- * HappyGallery v1.2.2
+ * HappyGallery v1.2.3
  * Licensed under GPL-3.0
  *
  * https://github.com/KraussKommunikation/happygallery
