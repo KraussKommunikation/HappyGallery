@@ -1,5 +1,5 @@
 /**
- * HappyGallery v1.2.2
+ * HappyGallery v1.2.3
  * Licensed under GPL-3.0
  *
  * https://github.com/KraussKommunikation/happygallery
@@ -639,6 +639,9 @@ class HappyGallery_ImageRenderer {
   }
 
   getTitleFallback(element) {
+    if(element.hasAttribute('data-hg-title')) {
+      return element.getAttribute("data-hg-title");
+    }
     return element.closest("[data-hg-title]")?.getAttribute("data-hg-title") ?? "";
   }
 }
